@@ -1,36 +1,44 @@
 #include <iostream>
-#include "json.hpp"
+#include <fstream>
+//#include "str_json.hpp"
+//#include "json.hpp"
+#include "to_json.hpp"
 
 using std::cout;
 using std::endl;
+using std::ofstream;
+using std::ifstream;
+using std::filebuf;
+
 
 
 int main(int argc, char** argv)
 {
-    // json tmp_json(json::type_t::json_int);
-    // tmp_json = 1;
 
-    json tmp_json_2(json::type_t::json_vector);
-    tmp_json_2.push_back("asdasdasdasdasdasd");
-    tmp_json_2.push_back(1);
+    //ifstream file_read;
+    //ofstream file_write;
+    //file_read.open("tmp.txt");
+    //file_write.open("tmp.txt", std::ios::out | std::ios::app);
+    
+    
 
-    // tmp_json_2.push_back(tmp_json);
-    // tmp_json_2[3] = "bbbbbb";
+    //file_read.clear();
+    //file_write.clear();
+    // json tmp_json();
+    // tmp_json.str_to_json("1111");
+    // cout << tmp_json.get_type() << endl;
+    // cout << tmp_json.str() << endl;
 
-    // json tmp_json_3(json::type_t::json_obj);
-    // tmp_json_3["111"] = "str11111";
-    // tmp_json_3["222"] = "str22222";
-    // tmp_json_3["333"] = "str33333";
-    // tmp_json_3["444"] = true;
-    // tmp_json_3["555"] = false;
-    // tmp_json_3["666"] = tmp_json_2;
+    // json m_json = to_json(" [ 123, 222, 333 ] ").str_to_json();
+    // m_json.show();
+    //to_json("  {  \"aaa\"  :123.7  ,   \"bbb\"   :456,\"ccc\":789, \"ddd\":[ 111, 222, \"444\"] , \"eee\" :  \"value\"}").str_to_json().show();
+    json m_json = to_json("G:\\cx\\my_json\\tmp.txt").file_to_json();
+    if (m_json["employee"]["married"] == true)
+        cout << "成功\t" << m_json["employee"]["married"].str() << endl;
+    m_json.show();
 
 
-    tmp_json_2.show();
-    tmp_json_2.remove();
-    tmp_json_2.show();
-    //cout << tmp_json_3.str();
-
+    //json m_json = json(true);
 
 
     return 0;

@@ -45,6 +45,8 @@ private:
 public:
     json(type_t argv_type);
     json();
+    json(const json& argv_json);
+    json(json&& argv_json);
     ~json();
 
     json(bool argv_value);
@@ -52,25 +54,25 @@ public:
     json(double argv_value);
     json(const char* argv_value);
     json(const string& argv_value);
-    json(const json& argv_json);
-    json(json&& argv_json);
 
 
     void copy(const json& argv_json);
-    void move(json& argv_json);
+    void move(json&& argv_json);
     void clear();
 
     void push_back(const json& argv_json);
+    void push_back(json&& argv_json);
     void remove();
     void remove(int argv_size);
 
     void push_back(const string& argv_key, const json& argv_value);
+    void push_back(const string& argv_key, json&& argv_value);
     void remove(const char* argv_key);
     void remove(const string& argv_key);
 
     //json& operator = (json&& argv_json);
-    void operator = (const json& argv_json);
-    void operator = (json&& argv_json);
+    json& operator = (const json& argv_json);
+    json& operator = (json&& argv_json);
     json& operator [] (int argv_indx);
     json& operator [] (const char* argv_indx);
     json& operator [] (const string& argv_indx);
@@ -83,11 +85,11 @@ public:
     //bool operator == (json argv_json);
     bool operator == (const json& argv_json) const;
     bool operator != (const json& argv_json) const;
-    // bool operator == (bool argv_bool) const ;
-    // bool operator == (int argv_int) const;   
-    // bool operator == (double argv_double) const;
-    // bool operator == (const char* argv_cstr) const;
-    // bool operator == (const string& argv_string) const;
+    bool operator == (const bool& argv_bool) const ;
+    bool operator == (const int& argv_int) const;   
+    bool operator == (const double& argv_double) const;
+    bool operator == (const char* argv_cstr) const;
+    bool operator == (const string& argv_string) const;
 
 
     void str_to_json(const string& argv_json_str);
@@ -125,6 +127,44 @@ json::json(type_t argv_type) : m_type(argv_type)
 //无参类型构造(委托构造)
 json::json() : json(type_t::json_null) {}
 
+//左值构造
+json::json(const json& argv_json) : m_type(type_t::json_null)
+{
+    copy(argv_json);
+}
+
+//右值构造
+json::json(json&& argv_json) : m_type(type_t::json_null)
+{
+    clear();
+    m_type = argv_json.m_type;
+    if (m_type == json_bool)
+        m_value.m_bool = argv_json.m_value.m_bool;
+    else if (m_type == json_int)
+        m_value.m_int = argv_json.m_value.m_int;
+    else if (m_type == json_double)
+        m_value.m_double = argv_json.m_value.m_double;
+    else if (m_type == json_string)
+    {
+        m_value.m_string = argv_json.m_value.m_string;
+        argv_json.m_value.m_string = nullptr;
+        //(m_value.m_string)->swap(*(argv_json.m_value.m_string));
+
+    } 
+    else if (m_type == json_vector)
+    {
+        m_value.m_vector = argv_json.m_value.m_vector;
+        argv_json.m_value.m_vector = nullptr;
+        //(m_value.m_vector)->swap(*(argv_json.m_value.m_vector));
+    }
+    else if (m_type == json_obj)
+    {
+        m_value.m_obj = argv_json.m_value.m_obj;
+        argv_json.m_value.m_obj = nullptr;
+        //(m_value.m_obj)->swap(*(argv_json.m_value.m_obj));
+    }
+}
+
 //析构
 json::~json(){    clear();  }
 
@@ -135,9 +175,9 @@ json::json(int argv_value)          : m_type(type_t::json_int)      {    m_value
 json::json(double argv_value)       : m_type(type_t::json_double)   {    m_value.m_double = argv_value;    }
 json::json(const char* argv_value)  : m_type(type_t::json_string)   {    m_value.m_string = new string(argv_value);    }
 json::json(const string& argv_value): m_type(type_t::json_string)   {    m_value.m_string = new string(argv_value);    }
-json::json(const json& argv_json)         : m_type(type_t::json_null)     {    copy(argv_json);   }
-json::json(json&& argv_json)        : m_type(type_t::json_null)     {    move(argv_json);   }
 /*************************************************************************************/
+
+
 
 
 //深拷贝
@@ -159,9 +199,10 @@ void json::copy(const json& argv_json)
 }
 
 //移动
-void json::move(json& argv_json)
+void json::move(json&& argv_json)
 {
-    m_type = type_t(argv_json.m_type);
+    clear();
+    m_type = argv_json.m_type;
     if (m_type == json_bool)
         m_value.m_bool = argv_json.m_value.m_bool;
     else if (m_type == json_int)
@@ -170,25 +211,23 @@ void json::move(json& argv_json)
         m_value.m_double = argv_json.m_value.m_double;
     else if (m_type == json_string)
     {
-        // m_value.m_string = argv_json.m_value.m_string;
-        // argv_json.m_value.m_string = nullptr;
-        (m_value.m_string)->swap(*(argv_json.m_value.m_string));
+        m_value.m_string = argv_json.m_value.m_string;
+        argv_json.m_value.m_string = nullptr;
+        //(m_value.m_string)->swap(*(argv_json.m_value.m_string));
 
     } 
     else if (m_type == json_vector)
     {
-        // m_value.m_vector = argv_json.m_value.m_vector;
-        // argv_json.m_value.m_vector = nullptr;
-        (m_value.m_vector)->swap(*(argv_json.m_value.m_vector));
+        m_value.m_vector = argv_json.m_value.m_vector;
+        argv_json.m_value.m_vector = nullptr;
+        //(m_value.m_vector)->swap(*(argv_json.m_value.m_vector));
     }
     else if (m_type == json_obj)
     {
-        // m_value.m_obj = argv_json.m_value.m_obj;
-        // argv_json.m_value.m_obj = nullptr;
-        (m_value.m_obj)->swap(*(argv_json.m_value.m_obj));
+        m_value.m_obj = argv_json.m_value.m_obj;
+        argv_json.m_value.m_obj = nullptr;
+        //(m_value.m_obj)->swap(*(argv_json.m_value.m_obj));
     }
-    
-    argv_json.clear();
 }
 
 //清空数据
@@ -206,25 +245,30 @@ void json::clear()
     {
         m_value.m_double = 0.0;
     }  
-    else if (m_type == json_string)
+    else if (m_type == json_string && m_value.m_string != nullptr)
     {
         delete(m_value.m_string);
+        m_value.m_string = nullptr;
     }  
-    else if (m_type == json_vector)
+    else if (m_type == json_vector && m_value.m_vector != nullptr)
     {
         for (auto a = (m_value.m_vector)->begin(); a != (m_value.m_vector)->end(); ++a)
         {
             a->clear();
         }
         delete(m_value.m_vector);
+
+        m_value.m_vector = nullptr;
     }
-    else if (m_type == json_obj)
+    else if (m_type == json_obj && m_value.m_obj != nullptr)
     { 
         for (auto a = (m_value.m_obj)->begin(); a != (m_value.m_obj)->end(); ++a)
         {
             (a->second).clear();
         }
-        delete(m_value.m_obj);   
+        delete(m_value.m_obj);  
+
+        m_value.m_obj = nullptr; 
     }
 
     m_type = json_null;
@@ -241,7 +285,21 @@ void json::push_back(const json& argv_json)
         m_value.m_vector = new vector<json>;
     }
 
-    m_value.m_vector->push_back(argv_json);
+    (m_value.m_vector)->push_back(argv_json);
+}
+
+//设置json::type_t::vector类型添加元素
+void json::push_back(json&& argv_json)
+{
+    if (m_type != json_vector)
+    {
+        clear();
+        m_type = json_vector;
+        m_value.m_vector = new vector<json>;
+    }
+
+    (m_value.m_vector)->push_back(argv_json);
+    //show();
 }
 
 //设置json::type_t::vector类型删除元素
@@ -278,6 +336,19 @@ void json::push_back(const string& argv_key, const json& argv_value)
     (*(m_value.m_obj))[argv_key] = argv_value;
 }
 
+//设置json::type_t::obj右值添加元素
+void json::push_back(const string& argv_key, json&& argv_value)
+{
+    if (m_type != json_obj)
+    {
+        clear();
+        m_type = json_obj;
+        m_value.m_obj = new map<string, json>;
+    }
+
+    (*(m_value.m_obj))[argv_key] = argv_value;
+}
+
 //设置json::type_t::obj删除元素
 void json::remove(const char* argv_key)
 {
@@ -293,15 +364,43 @@ void json::remove(const string& argv_key)
 
 
 //设置json用=时做深拷贝
-void json::operator = (const json& argv_json)
+json& json::operator = (const json& argv_json)
 {
     copy(argv_json);
+    return *this;
 }
 
 //设置json用=一个右值时做移动拷贝
-void json::operator = (json&& argv_json)
+json& json::operator = (json&& argv_json)
 {
-    move(argv_json);
+    clear();
+    cout << argv_json.m_type;
+    //move(argv_json);
+    m_type = argv_json.m_type;
+    if (m_type == json_bool)
+        m_value.m_bool = argv_json.m_value.m_bool;
+    else if (m_type == json_int)
+        m_value.m_int = argv_json.m_value.m_int;
+    else if (m_type == json_double)
+        m_value.m_double = argv_json.m_value.m_double;
+    else if (m_type == json_string)
+    {
+        m_value.m_string = argv_json.m_value.m_string;
+        argv_json.m_value.m_string = nullptr;
+
+    } 
+    else if (m_type == json_vector)
+    {
+        m_value.m_vector = argv_json.m_value.m_vector;
+        argv_json.m_value.m_vector = nullptr;
+    }
+    else if (m_type == json_obj)
+    {
+        m_value.m_obj = argv_json.m_value.m_obj;
+        argv_json.m_value.m_obj = nullptr;
+    }
+    
+    return *this;
 }
 
 //设置json::type_t::vector可以使用下标(内存偏移地址访问)
@@ -381,6 +480,7 @@ json::operator string() const
 /*************************************************************************************/
 
 //用于和其它类型对比
+/*************************************************************************************/
 bool json::operator == (const json& argv_json) const
 {
     if (argv_json.m_type == json_bool)
@@ -442,37 +542,43 @@ bool json::operator == (const json& argv_json) const
     
     return false;
 }
-
 bool json::operator != (const json& argv_json) const
 {
     return !((*this) == argv_json);
 }
+bool json::operator == (const bool& argv_bool) const 
+{
+    if (m_type != json_bool)
+        return false;
 
-// bool json::operator == (bool argv_bool) const 
-// {
-//     return (argv_bool == m_value.m_bool) ? true : false;
-// }
-//
-// bool json::operator == (int argv_int) const
-// {
-//     return (argv_int == m_value.m_int) ? true : false;
-// }   
-//
-// bool json::operator == (double argv_double) const
-// {
-//     return (argv_double == m_value.m_double) ? true : false;
-// }
-//
-// bool json::operator == (const char* argv_cstr) const
-// {
-//     return operator ==(string(argv_cstr));
-// }
-//
-// bool json::operator == (const string& argv_string) const
-// {
-//     return (argv_string == *(m_value.m_string)) ? true : false;
-// }
+    return (argv_bool == m_value.m_bool) ? true : false;
+}
+bool json::operator == (const int& argv_int) const
+{
+    if (m_type != json_int)
+        return false;
 
+    return (argv_int == m_value.m_int) ? true : false;
+}   
+bool json::operator == (const double& argv_double) const
+{
+    if (m_type != json_double)
+        return false;
+
+    return (argv_double == m_value.m_double) ? true : false;
+}
+bool json::operator == (const char* argv_cstr) const
+{
+    return operator ==(string(argv_cstr));
+}
+bool json::operator == (const string& argv_string) const
+{
+    if (m_type != json_string)
+        return false;
+
+    return (argv_string == *(m_value.m_string)) ? true : false;
+}
+/*************************************************************************************/
 
 void json::str_to_json(const string& argv_json_str)
 {

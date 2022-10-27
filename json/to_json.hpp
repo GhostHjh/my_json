@@ -90,6 +90,9 @@ json to_json::str_to_json()
     {
         if (json_str[json_str_index] == '[')
         {
+            // json m_tmp_json = str_json_vector();
+            // m_tmp_json.show();
+            // return m_tmp_json;
             return str_json_vector();
         }
         else if (json_str[json_str_index] == '{')
@@ -262,13 +265,16 @@ json to_json::str_json_vector()
         if (json_str[json_str_index] == ']')
         {
             ++json_str_index;
-            return json(tmp_json);
-            //return tmp_json;
+            //return json(tmp_json);
+            return tmp_json;
         }  
         else if (json_str[json_str_index] == ',' || json_str[json_str_index] == '\n'  || json_str[json_str_index] == '\r' || json_str[json_str_index] == ' ' || json_str[json_str_index] == '\t')
             get_next_char();
         else
+        {
             tmp_json.push_back(str_to_json());
+        }
+            
     }
 
     throw std::logic_error("str_json_vector 不完整的类型");
