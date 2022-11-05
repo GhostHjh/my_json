@@ -1,111 +1,5 @@
-#pragma once
-
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
-
-//#include "str_json.hpp"
-
-
-using std::cout;
-using std::endl;
-using std::stringstream;
-using std::string;
-using std::vector;
-using std::map;
-
-
-class json
-{
-public:
-    enum type_t
-    {
-        json_null = 0,
-        json_bool,
-        json_int,
-        json_double,
-        json_string,
-        json_vector,
-        json_obj
-    };
-
-private:
-    union value_t
-    {
-        bool                m_bool;
-        int                 m_int;
-        double              m_double;
-        string*             m_string;
-        vector<json>*       m_vector;
-        map<string, json>*  m_obj;
-    };
-
-public:
-    json(type_t argv_type);
-    json();
-    json(const json& argv_json);
-    json(json&& argv_json);
-    ~json();
-
-    json(bool argv_value);
-    json(int argv_value);
-    json(double argv_value);
-    json(const char* argv_value);
-    json(const string& argv_value);
-
-
-    void copy(const json& argv_json);
-    void move(json&& argv_json);
-    void clear();
-
-    void push_back(const json& argv_json);
-    void push_back(json&& argv_json);
-    void remove();
-    void remove(int argv_size);
-
-    void push_back(const string& argv_key, const json& argv_value);
-    void push_back(const string& argv_key, json&& argv_value);
-    void remove(const char* argv_key);
-    void remove(const string& argv_key);
-
-    //json& operator = (json&& argv_json);
-    json& operator = (const json& argv_json);
-    json& operator = (json&& argv_json);
-    json& operator [] (int argv_indx);
-    json& operator [] (const char* argv_indx);
-    json& operator [] (const string& argv_indx);
-
-    operator bool() const;
-    operator int() const;
-    operator double() const;
-    operator string() const;
-
-    //bool operator == (json argv_json);
-    bool operator == (const json& argv_json) const;
-    bool operator != (const json& argv_json) const;
-    bool operator == (const bool& argv_bool) const ;
-    bool operator == (const int& argv_int) const;   
-    bool operator == (const double& argv_double) const;
-    bool operator == (const char* argv_cstr) const;
-    bool operator == (const string& argv_string) const;
-
-
-    void str_to_json(const string& argv_json_str);
-    void file_to_json(const string& argv_file_name);
-
-    string str();
-    void show();
-
-    json::type_t get_type() const;
-
-private:
-    type_t m_type;
-    value_t m_value;
-};
-
-
+#include "json.h"
+#include "to_json.h"
 
 //通过类型构造
 json::json(type_t argv_type) : m_type(argv_type)
@@ -127,57 +21,19 @@ json::json(type_t argv_type) : m_type(argv_type)
 //无参类型构造(委托构造)
 json::json() : json(type_t::json_null) {}
 
-//左值构造
-json::json(const json& argv_json) : m_type(type_t::json_null)
-{
-    copy(argv_json);
-}
-
-//右值构造
-json::json(json&& argv_json) : m_type(type_t::json_null)
-{
-    clear();
-    m_type = argv_json.m_type;
-    if (m_type == json_bool)
-        m_value.m_bool = argv_json.m_value.m_bool;
-    else if (m_type == json_int)
-        m_value.m_int = argv_json.m_value.m_int;
-    else if (m_type == json_double)
-        m_value.m_double = argv_json.m_value.m_double;
-    else if (m_type == json_string)
-    {
-        m_value.m_string = argv_json.m_value.m_string;
-        argv_json.m_value.m_string = nullptr;
-        //(m_value.m_string)->swap(*(argv_json.m_value.m_string));
-
-    } 
-    else if (m_type == json_vector)
-    {
-        m_value.m_vector = argv_json.m_value.m_vector;
-        argv_json.m_value.m_vector = nullptr;
-        //(m_value.m_vector)->swap(*(argv_json.m_value.m_vector));
-    }
-    else if (m_type == json_obj)
-    {
-        m_value.m_obj = argv_json.m_value.m_obj;
-        argv_json.m_value.m_obj = nullptr;
-        //(m_value.m_obj)->swap(*(argv_json.m_value.m_obj));
-    }
-}
-
 //析构
 json::~json(){    clear();  }
 
 //用值构造
 /*************************************************************************************/
-json::json(bool argv_value)         : m_type(type_t::json_bool)     {    m_value.m_bool = argv_value;   }
+json::json(bool argv_value)         : m_type(type_t::json_bool)     {    m_value.m_bool = argv_value;    }
 json::json(int argv_value)          : m_type(type_t::json_int)      {    m_value.m_int = argv_value;    }
 json::json(double argv_value)       : m_type(type_t::json_double)   {    m_value.m_double = argv_value;    }
 json::json(const char* argv_value)  : m_type(type_t::json_string)   {    m_value.m_string = new string(argv_value);    }
 json::json(const string& argv_value): m_type(type_t::json_string)   {    m_value.m_string = new string(argv_value);    }
+json::json(const json& argv_json)   : m_type(type_t::json_null)     {    copy(argv_json);    }
+json::json(json&& argv_json)        : m_type(type_t::json_null)     {    move(std::move(argv_json));    }
 /*************************************************************************************/
-
-
 
 
 //深拷贝
@@ -373,32 +229,7 @@ json& json::operator = (const json& argv_json)
 //设置json用=一个右值时做移动拷贝
 json& json::operator = (json&& argv_json)
 {
-    clear();
-    cout << argv_json.m_type;
-    //move(argv_json);
-    m_type = argv_json.m_type;
-    if (m_type == json_bool)
-        m_value.m_bool = argv_json.m_value.m_bool;
-    else if (m_type == json_int)
-        m_value.m_int = argv_json.m_value.m_int;
-    else if (m_type == json_double)
-        m_value.m_double = argv_json.m_value.m_double;
-    else if (m_type == json_string)
-    {
-        m_value.m_string = argv_json.m_value.m_string;
-        argv_json.m_value.m_string = nullptr;
-
-    } 
-    else if (m_type == json_vector)
-    {
-        m_value.m_vector = argv_json.m_value.m_vector;
-        argv_json.m_value.m_vector = nullptr;
-    }
-    else if (m_type == json_obj)
-    {
-        m_value.m_obj = argv_json.m_value.m_obj;
-        argv_json.m_value.m_obj = nullptr;
-    }
+    move(std::move(argv_json));
     
     return *this;
 }
@@ -582,12 +413,12 @@ bool json::operator == (const string& argv_string) const
 
 void json::str_to_json(const string& argv_json_str)
 {
-    
+    move(to_json(argv_json_str).str_to_json());
 }
 
 void json::file_to_json(const string& argv_file_name)
 {
-
+    move(to_json(argv_file_name).file_to_json());
 }
 
 

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
 //#include "str_json.hpp"
-//#include "json.hpp"
-#include "to_json.hpp"
+#include "json.h"
+#include "to_json.h"
 
 using std::cout;
 using std::endl;
@@ -32,9 +32,15 @@ int main(int argc, char** argv)
     // json m_json = to_json(" [ 123, 222, 333 ] ").str_to_json();
     // m_json.show();
     //to_json("  {  \"aaa\"  :123.7  ,   \"bbb\"   :456,\"ccc\":789, \"ddd\":[ 111, 222, \"444\"] , \"eee\" :  \"value\"}").str_to_json().show();
-    json m_json = to_json("G:\\cx\\my_json\\tmp.txt").file_to_json();
-    if (m_json["employee"]["married"] == true)
-        cout << "成功\t" << m_json["employee"]["married"].str() << endl;
+    // json m_json = to_json("G:\\cx\\my_json\\tmp.txt").file_to_json();
+    // if (m_json["employee"]["married"] == true)
+    //     cout << "成功\t" << m_json["employee"]["married"].str() << endl;
+    // m_json.show();
+    json m_json;
+    m_json.file_to_json("tmp.txt");
+    m_json.show();
+    cout << endl << endl;
+    m_json.str_to_json("{ \"asdasda\" : 123 }");
     m_json.show();
 
 
