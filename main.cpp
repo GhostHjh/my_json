@@ -1,55 +1,39 @@
 #include <iostream>
-#include <fstream>
-//#include "str_json.hpp"
-#include "json.h"
-#include "to_json.h"
+#include <thread>
+#include "Json.h"
 
-using std::cout;
-using std::endl;
-using std::ofstream;
-using std::ifstream;
-using std::filebuf;
-
-
-
-int main(int argc, char** argv)
+void func_a(int&& a)
 {
-
-    //ifstream file_read;
-    //ofstream file_write;
-    //file_read.open("tmp.txt");
-    //file_write.open("tmp.txt", std::ios::out | std::ios::app);
-    
-    
-
-    //file_read.clear();
-    //file_write.clear();
-    // json tmp_json();
-    // tmp_json.str_to_json("1111");
-    // cout << tmp_json.get_type() << endl;
-    // cout << tmp_json.str() << endl;
-
-    // json m_json = to_json(" [ 123, 222, 333 ] ").str_to_json();
-    // m_json.show();
-    //to_json("  {  \"aaa\"  :123.7  ,   \"bbb\"   :456,\"ccc\":789, \"ddd\":[ 111, 222, \"444\"] , \"eee\" :  \"value\"}").str_to_json().show();
-    // json m_json = to_json("G:\\cx\\my_json\\tmp.txt").file_to_json();
-    // if (m_json["employee"]["married"] == true)
-    //     cout << "成功\t" << m_json["employee"]["married"].str() << endl;
-    // m_json.show();
-    json m_json;
-    m_json.file_to_json("tmp.txt");
-    m_json.show();
-    cout << endl << endl;
-    m_json.str_to_json("{ \"asdasda\" : 123 }");
-    m_json.show();
-
-
-    //json m_json = json(true);
-
-
-    return 0;
+    std::cout << a << "\n\n\n";
 }
 
+void func_b(int&& b)
+{
+    func_a(std::move(b));
+}
+
+
+int main(int argc, const char** argv)
+{
+    JSON::Json_value tmp;
+    tmp.insert(std::make_pair("a", 10000));
+    tmp.insert(std::make_pair("b", 20000));
+    tmp.insert(std::make_pair("c", 30000));
+    tmp.insert(std::make_pair("d", 40000));
+    //tmp.insert("string");
+    JSON::Json_value tmp2;
+    tmp2.insert(std::make_pair("b", 20000));
+    tmp.insert(std::make_pair("e", tmp2));
+
+    //std::cout << "hello world!\n" << tmp << "\n" << tmp["a"] << "\n";
+    //JSON::Json m_json("aFalse", JSON::Json_create_mode::String_create);
+    //std::cout << JSON::Serialization().parser("  [ 127, \"999999\", True ]  ");
+    JSON::Json tmp_json;
+    tmp_json.set_value("F:\\cx\\my_json_plus\\build\\compile_commands.json", JSON::Json_create_mode::File_create);
+    std::cout << tmp_json.get_value();
+    //std::this_thread::sleep_for(std::chrono::seconds(50));
+    return 0;
+}
 
 
 
