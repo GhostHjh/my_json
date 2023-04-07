@@ -20,6 +20,9 @@ class Json_value
 {
 public:
     Json_value();
+    Json_value(const Json_value& argv_value);
+    Json_value(Json_value&& argv_value);
+    
     Json_value(const Type& argv_type);
     Json_value(const bool& argv_value);
     Json_value(const int& argv_value);
@@ -29,9 +32,6 @@ public:
     Json_value(const std::vector<Json_value>& argv_value);
     Json_value(const std::map<std::string, Json_value>& argv_value);
 
-    Json_value(const Json_value& argv_value);
-    Json_value(Json_value&& argv_value);
-
     Json_value& operator = (const Json_value& argv_value);
     Json_value& operator = (Json_value&& argv_value);
 
@@ -39,16 +39,28 @@ public:
 
 
 public:
-    operator int();
-    operator double();
-    operator std::string();
+    operator bool() const;
+    operator int() const;
+    operator double() const;
+    operator std::string() const;
+
+    const bool operator == (const Json_value& argv_value);
     const bool operator == (const bool& argv_value);
     const bool operator == (const int& argv_value);
     const bool operator == (const double& argv_value);
+    const bool operator == (const char* argv_value);
     const bool operator == (const std::string& argv_value);
 
+    const bool operator != (const Json_value& argv_value);
+    const bool operator != (const bool& argv_value);
+    const bool operator != (const int& argv_value);
+    const bool operator != (const double& argv_value);
+    const bool operator != (const char* argv_value);
+    const bool operator != (const std::string& argv_value);
+    
     const bool operator < (const int& argv_value);
     const bool operator < (const double& argv_value);
+    const bool operator < (const char* argv_value);
     const bool operator < (const std::string& argv_value);
     
     const bool operator > (const int& argv_value);
@@ -76,11 +88,12 @@ public:
     Json_value operator[] (const char* argv_key);
     Json_value operator[] (const std::string& argv_key);
 
+    void clear();
+
 
 private:
     void copy(const Json_value& argv_value);
     void move(Json_value&& argv_value);
-    void clear();
 
 
 private:
@@ -101,6 +114,11 @@ class Serialization
 {
 public:
     Serialization();
+    Serialization(const Serialization& argv_Serialization);
+    Serialization(Serialization&& argv_Serialization);
+
+    const Serialization& operator = (const Serialization& argv_Serialization);
+    const Serialization& operator = (Serialization&& argv_Serialization);
 
 
 public:
@@ -108,12 +126,16 @@ public:
     const Json_value parser(const char* argv_str);
     const std::string parser(const Json_value& argv_value);
     const bool& parser_succeed();
+    void clear();
 
 
 private:
     void skip_space();
     const char& get_nospace_ch();
     const Json_value parser();
+
+    void copy(const Serialization& argv_Serialization);
+    void move(Serialization&& argv_Serialization);
 
 
 private:
@@ -146,16 +168,29 @@ class Json
 {
 public:
     Json();
+    Json(const Json& argv_json);
+    Json(Json&& argv_json);
     Json(const Json_value& argv_value);
     Json(const Type& argv_json_type);
     Json(const std::string& argv_str, const Json_create_mode& argv_create_mode);
 
+    const Json& operator = (const Json& argv_json);
+    const Json& operator = (Json&& argv_json);
+
 
 public:
     const Json_value& get_value();
+    //const Json_value& get_value(int argv_index);
+    //const Json_value& get_value(const std::string& argv_key);
     void set_value(const Json_value& argv_value);
     void set_value(const Type& argv_json_type);
     void set_value(const std::string& argv_str, const Json_create_mode& argv_create_mode);
+
+
+private:
+    void clear();
+    void copy(const Json& argv_json);
+    void move(Json&& argv_json);
 
 
 private:

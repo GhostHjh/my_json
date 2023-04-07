@@ -73,6 +73,15 @@ Json_value::Json_value()
         _value_string(nullptr), _value_array(nullptr), _value_object(nullptr)
 {}
 
+Json_value::Json_value(const Json_value& argv_value)
+    : Json_value()
+{    copy(argv_value);    }
+
+Json_value::Json_value(Json_value&& argv_value)
+    : Json_value()
+{    move(std::move(argv_value));   }
+
+
 Json_value::Json_value(const Type& argv_type)
     : Json_value()
 {
@@ -112,13 +121,6 @@ Json_value::Json_value(const std::map<std::string, Json_value>& argv_value)
     : Json_value()
 {   _value_type = Type::Object; _value_object = new std::map<std::string, Json_value>(argv_value);    }
 
-Json_value::Json_value(const Json_value& argv_value)
-    : Json_value()
-{    copy(argv_value);    }
-
-Json_value::Json_value(Json_value&& argv_value)
-    : Json_value()
-{    move(std::move(argv_value));   }
 
 Json_value& Json_value::operator = (const Json_value& argv_value)
 {    clear(); copy(argv_value); return (*this);    }
@@ -134,17 +136,96 @@ Json_value::~Json_value()
 //比较运算符重载
 /*************************************************************************************************************************************************************/
 
-Json_value::operator int()
-{    return _value_int; }
+Json_value::operator bool() const
+{
+    if (_value_type == Type::Int)
+        return static_cast<bool>(_value_int);
+    else if (_value_type == Type::Double)
+        return static_cast<bool>(_value_double);
+    else
+        return _value_bool;
+}
 
-Json_value::operator double()
-{    return _value_double;  }
+Json_value::operator int() const
+{
+    if (_value_type == Type::Bool)
+        return static_cast<int>(_value_bool);
+    else if (_value_type == Type::Double)
+        return static_cast<int>(_value_double);
+    else
+        return _value_int;
+}
 
-Json_value::operator std::string()
+Json_value::operator double() const
+{
+    if (_value_type == Type::Bool)
+        return static_cast<double>(_value_bool);
+    if (_value_type == Type::Int)
+        return static_cast<double>(_value_int);
+    else
+        return static_cast<bool>(_value_double);
+}
+
+Json_value::operator std::string() const
 {
     if (_value_type == Type::String)
         return *_value_string;
     return std::string();
+}
+
+
+const bool Json_value::operator == (const Json_value& argv_value)
+{
+    if (_value_type == Type::Nullptr && argv_value._value_type == Type::Nullptr)
+        return true;
+    
+    if ((_value_type == Type::Array && argv_value._value_type != Type::Array) || (_value_type != Type::Array && argv_value._value_type == Type::Array) ||
+        (_value_type == Type::Object && argv_value._value_type != Type::Object) || (_value_type != Type::Object && argv_value._value_type == Type::Object) ||
+        (_value_type == Type::String && argv_value._value_type != Type::String) || (_value_type != Type::String && argv_value._value_type == Type::String))
+        return false;
+
+    if (_value_type == Type::Array)
+    {
+        if (_value_array->size() != argv_value._value_array->size())
+            return false;
+
+        auto a = _value_array->begin();
+        auto b = argv_value._value_array->begin();
+
+        for (; a != _value_array->end() && b != argv_value._value_array->end(); ++a, ++b)
+        {
+            if (*a != *b)
+                return false;
+        }
+
+        return true;
+    }
+    else if (_value_type == Type::Object)
+    {
+        if (_value_object->size() != argv_value._value_object->size())
+            return false;
+
+        auto a = _value_object->begin();
+        auto b = argv_value._value_object->begin();
+
+        for (; a != _value_object->end() && b != argv_value._value_object->end(); ++a, ++b)
+        {
+            if ((a->first != b->first) || (a->second != b->second))
+                return false;
+        }
+
+        return true;
+    }
+    else if (_value_type == Type::String)
+        return *_value_string == *(argv_value._value_string);
+    else if (_value_type == Type::Bool)
+        return _value_bool == static_cast<bool>(argv_value);   
+    else if (_value_type == Type::Int)
+        return _value_int == static_cast<int>(argv_value);
+    else if (_value_type == Type::Double)
+        return _value_double == static_cast<double>(argv_value);
+    
+    return false;
 }
 
 const bool Json_value::operator == (const bool& argv_value)
@@ -155,18 +236,35 @@ const bool Json_value::operator == (const int& argv_value)
 
 const bool Json_value::operator == (const double& argv_value)
 {    return (_value_type == Type::Double && _value_double == argv_value);   }
-  
-const bool Json_value::operator > (const char* argv_value)
-{    return *this == (std::string(argv_value)); }
 
 const bool Json_value::operator == (const std::string& argv_value)
-{    return (_value_type == Type::String) ? (*_value_string == argv_value) : false; }
+{    return (_value_type == Type::String) ? (*_value_string == argv_value) : false;    }
+
+
+const bool Json_value::operator != (const Json_value& argv_value)
+{   return !(*this == argv_value);    }
+
+const bool Json_value::operator != (const bool& argv_value)
+{   return !(*this == argv_value);    }
+
+const bool Json_value::operator != (const int& argv_value)
+{   return !(*this == argv_value);    }
+
+const bool Json_value::operator != (const double& argv_value)
+{   return !(*this == argv_value);    }
+
+const bool Json_value::operator != (const std::string& argv_value)
+{   return !(*this == argv_value);    }
+
 
 const bool Json_value::operator < (const int& argv_value)
 {    return ((_value_type == Type::Int && _value_int < argv_value) || (_value_type == Type::Double && _value_double < argv_value)); }
 
 const bool Json_value::operator < (const double& argv_value)
 {    return (( _value_type == Type::Double && _value_double < argv_value) || (_value_type == Type::Int && _value_int < argv_value));    }
+
+const bool Json_value::operator < (const char* argv_value)
+{   return *this < (std::string(argv_value));    }
 
 const bool Json_value::operator < (const std::string& argv_value)
 {
@@ -178,11 +276,15 @@ const bool Json_value::operator < (const std::string& argv_value)
     return false;
 }
 
+
 const bool Json_value::operator > (const int& argv_value)
 {    return ((_value_type == Type::Int && _value_int > argv_value) || (_value_type == Type::Double && _value_double > argv_value)); }
 
 const bool Json_value::operator > (const double& argv_value)
 {    return (( _value_type == Type::Double && _value_double > argv_value) || (_value_type == Type::Int && _value_int > argv_value));    }
+
+const bool Json_value::operator > (const char* argv_value)
+{    return *this == (std::string(argv_value)); }
 
 const bool Json_value::operator > (const std::string& argv_value)
 {
@@ -196,64 +298,6 @@ const bool Json_value::operator > (const std::string& argv_value)
 
 
 
-//私有函数
-/*************************************************************************************************************************************************************/
-
-void Json_value::copy(const Json_value& argv_value)
-{
-    if (argv_value._value_type == Type::Nullptr)
-        clear();
-
-    _value_type = argv_value._value_type;
-    _value_bool = argv_value._value_bool;
-    _value_int = argv_value._value_int;
-    _value_double = argv_value._value_double;
-    if (_value_type == Type::String)
-        _value_string = new std::string(*(argv_value._value_string));
-    else if (_value_type == Type::Array)
-        _value_array = new std::vector(*(argv_value._value_array)); 
-    else if (_value_type == Type::Object)
-        _value_object = new std::map<std::string, Json_value>(*(argv_value._value_object));
-}
-
-void Json_value::move(Json_value&& argv_value)
-{
-    if (argv_value._value_type == Type::Nullptr)
-        clear();
-
-    _value_type = argv_value._value_type;
-    _value_bool = argv_value._value_bool;
-    _value_int = argv_value._value_int;
-    _value_double = argv_value._value_double;
-    if (_value_type == Type::String)
-        _value_string = argv_value._value_string, argv_value._value_string = nullptr;
-    else if (_value_type == Type::Array)
-        _value_array = argv_value._value_array, argv_value._value_array = nullptr; 
-    else if (_value_type == Type::Object)
-        _value_object = argv_value._value_object, argv_value._value_object = nullptr;
-}
-
-void Json_value::clear()
-{
-    if (_value_type == Type::Nullptr)
-        return;
-    //if (_value_type == Type::Int)
-    //    _value_int = 0;
-    //else if (_value_type == Type::Double)
-    //    _value_double = 0.0;
-    _value_int = 0;
-    _value_double = 0.0;
-    if (_value_type == Type::String)
-        delete(_value_string);
-    else if (_value_type == Type::Array)
-        delete(_value_array); 
-    else if (_value_type == Type::Object)
-        delete(_value_object);
-
-    _value_type = Type::Nullptr;
-}
-
-
 //对外函数
 /*************************************************************************************************************************************************************/
 
@@ -261,7 +305,7 @@ const Type& Json_value::value_type()
 {    return _value_type;    }
 
 const bool Json_value::is_bool()
-{   return (_value_type == Type::Bool);  }
+{    return (_value_type == Type::Bool);  }
 
 const bool Json_value::is_int()
 {    return (_value_type == Type::Int);  }
@@ -309,15 +353,74 @@ Json_value Json_value::operator[] (const int& argv_index)
 }
 
 Json_value Json_value::operator[] (const char* argv_key)
-{
-    return (*this)[std::string(argv_key)];
-}
+{    return (*this)[std::string(argv_key)];    }
 
 Json_value Json_value::operator[] (const std::string& argv_key)
 {
     if (_value_type == Type::Object && _value_object->count(argv_key) == 1)
         return (*_value_object)[argv_key];
     return Json_value();
+}
+
+
+void Json_value::clear()
+{
+    if (_value_type == Type::Nullptr)
+        return;
+    //if (_value_type == Type::Int)
+    //    _value_int = 0;
+    //else if (_value_type == Type::Double)
+    //    _value_double = 0.0;
+    _value_bool = false;
+    _value_int = 0;
+    _value_double = 0.0;
+    if (_value_type == Type::String)
+        delete(_value_string);
+    else if (_value_type == Type::Array)
+        delete(_value_array); 
+    else if (_value_type == Type::Object)
+        delete(_value_object);
+
+    _value_type = Type::Nullptr;
+}
+
+
+
+//私有函数
+/*************************************************************************************************************************************************************/
+
+void Json_value::copy(const Json_value& argv_value)
+{
+    if (argv_value._value_type == Type::Nullptr)
+    {   clear(); return;    }
+
+    _value_type = argv_value._value_type;
+    _value_bool = argv_value._value_bool;
+    _value_int = argv_value._value_int;
+    _value_double = argv_value._value_double;
+    if (_value_type == Type::String)
+        _value_string = new std::string(*(argv_value._value_string));
+    else if (_value_type == Type::Array)
+        _value_array = new std::vector(*(argv_value._value_array)); 
+    else if (_value_type == Type::Object)
+        _value_object = new std::map<std::string, Json_value>(*(argv_value._value_object));
+}
+
+void Json_value::move(Json_value&& argv_value)
+{
+    if (argv_value._value_type == Type::Nullptr)
+    {    clear(); return;    }
+
+    _value_type = argv_value._value_type;
+    _value_bool = argv_value._value_bool;
+    _value_int = argv_value._value_int;
+    _value_double = argv_value._value_double;
+    if (_value_type == Type::String)
+        _value_string = argv_value._value_string, argv_value._value_string = nullptr;
+    else if (_value_type == Type::Array)
+        _value_array = argv_value._value_array, argv_value._value_array = nullptr; 
+    else if (_value_type == Type::Object)
+        _value_object = argv_value._value_object, argv_value._value_object = nullptr;
 }
 
 /*************************************************************************************************************************************************************/
@@ -334,23 +437,31 @@ Serialization::Serialization()
     : _json_str(), _json_str_index(0), _parser_succeed(false)
 {}
 
+Serialization::Serialization(const Serialization& argv_Serialization)
+    : Serialization()
+{    copy(argv_Serialization);    }
+
+Serialization::Serialization(Serialization&& argv_Serialization)
+    : Serialization()
+{    move(std::move(argv_Serialization));    }
+
+const Serialization& Serialization::operator = (const Serialization& argv_Serialization)
+{    clear(); copy(argv_Serialization); return (*this);    }
+
+const Serialization& Serialization::operator = (Serialization&& argv_Serialization)
+{    clear(); move(std::move(argv_Serialization)); return (*this);    }
+
+
 
 
 //公开函数
 /*************************************************************************************************************************************************************/
 
 const Json_value Serialization::parser(const std::string& argv_str)
-{
-    _json_str = argv_str;
-    skip_space();
-
-    return parser();
-}
+{   _json_str = argv_str; skip_space(); return parser();    }
 
 const Json_value Serialization::parser(const char* argv_str)
-{
-    return parser(std::string(argv_str));
-}
+{   return parser(std::string(argv_str));    }
 
 const std::string Serialization::parser(const Json_value& argv_value)
 {
@@ -362,9 +473,10 @@ const std::string Serialization::parser(const Json_value& argv_value)
 }
 
 const bool& Serialization::parser_succeed()
-{
-    return _parser_succeed;
-}
+{   return _parser_succeed;    }
+
+void Serialization::clear()
+{   _json_str.clear(); _json_str_index = 0; _parser_succeed = false;    }
 
 
 
@@ -377,10 +489,7 @@ void Serialization::skip_space()
 }
 
 const char& Serialization::get_nospace_ch()
-{
-    skip_space();
-    return _json_str[_json_str_index];
-}
+{   skip_space(); return _json_str[_json_str_index];    }
 
 const Json_value Serialization::parser()
 {
@@ -526,6 +635,22 @@ const Json_value Serialization::parser_Object()
     return Json_value();
 }
 
+
+void Serialization::copy(const Serialization& argv_Serialization)
+{
+    _json_str = argv_Serialization._json_str;
+    _json_str_index = argv_Serialization._json_str_index;
+    _parser_succeed = argv_Serialization._parser_succeed;
+}
+
+void Serialization::move(Serialization&& argv_Serialization)
+{
+    _json_str = std::move(argv_Serialization._json_str);
+    _json_str_index = argv_Serialization._json_str_index;
+    _parser_succeed = argv_Serialization._parser_succeed;
+    argv_Serialization.clear();
+}
+
 /*************************************************************************************************************************************************************/
 
 
@@ -540,6 +665,15 @@ const Json_value Serialization::parser_Object()
 Json::Json()
     : _value(Type::Nullptr)
 {}
+
+Json::Json(const Json& argv_json)
+    : Json()
+{   copy(argv_json);    }
+
+Json::Json(Json&& argv_json)
+    : Json()
+{   move(std::move(argv_json));    }
+
 
 Json::Json(const Json_value& argv_valeu)
     : _value(argv_valeu)
@@ -573,13 +707,25 @@ Json::Json(const std::string& argv_str, const Json_create_mode& argv_create_mode
     }
 }
 
-/*************************************************************************************************************************************************************/
+const Json& Json::operator = (const Json& argv_json)
+{    clear(); copy(argv_json); return (*this);    }
+
+const Json& Json::operator = (Json&& argv_json)
+{    clear(); move(std::move(argv_json)); return (*this);    }
+
 
 
 //私有函数
 /*************************************************************************************************************************************************************/
 
+void Json::clear()
+{   _value.clear(); _serialization.clear();    }
 
+void Json::copy(const Json& argv_json)
+{   _value = argv_json._value; _serialization = argv_json._serialization;    }
+
+void Json::move(Json&& argv_json)
+{   _value = std::move(argv_json._value); _serialization = std::move(argv_json._serialization);    }
 
 
 
@@ -587,19 +733,20 @@ Json::Json(const std::string& argv_str, const Json_create_mode& argv_create_mode
 /*************************************************************************************************************************************************************/
 
 const Json_value& Json::get_value()
-{
-    return _value;
-}
+{   return _value;    }
 
 void Json::set_value(const Json_value& argv_value)
-{
-    _value = argv_value;
-}
+{   _value = argv_value;    }
+
+//const Json_value& Json::get_value(int argv_index)
+//{   return (_value[argv_index]);    }
+//
+//const Json_value& Json::get_value(const std::string& argv_key)
+//{   return (_value[argv_key]);    }
+
 
 void Json::set_value(const Type& argv_json_type)
-{
-    _value = Json_value(argv_json_type);
-}
+{   _value = Json_value(argv_json_type);    }
 
 void Json::set_value(const std::string& argv_str, const Json_create_mode& argv_create_mode)
 {
